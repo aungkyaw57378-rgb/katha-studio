@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B7F74">
+<title>Katha Studio</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">Katha<span>.</span>Studio</div>
+    <button class="gear" id="gear" aria-label="Keys and settings">Keys</button>
+  </header>
+
+  <main>
+    <!-- SETTINGS -->
+    <section class="screen" id="s-keys" hidden>
+      <h1>Free keys</h1>
+      <p class="sub">Two free keys let the app write scripts and find photos. They stay on this phone and go only to Google and Pexels.</p>
+      <div>
+        <label for="k-gemini" class="lbl">Gemini key (writes the script)</label>
+        <input id="k-gemini" type="password" autocomplete="off" placeholder="AIza...">
+        <p class="hint">Free at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>. Sign in with Google and tap Create API key.</p>
+      </div>
+      <div>
+        <label for="k-pexels" class="lbl">Pexels key (finds photos, optional)</label>
+        <input id="k-pexels" type="password" autocomplete="off" placeholder="Pexels API key">
+        <p class="hint">Free at <a href="https://www.pexels.com/api/" target="_blank" rel="noopener">pexels.com/api</a>. Without it the app uses Wikimedia Commons photos, which match topics less well.</p>
+      </div>
+      <button class="cta" id="save-keys">Save keys</button>
+    </section>
+
+    <!-- CREATE -->
+    <section class="screen" id="s-create">
+      <h1>Turn an idea into a narrated video</h1>
+      <div>
+        <h2>Your idea</h2>
+        <label for="idea" class="vh">Idea</label>
+        <textarea id="idea">10 surprising facts about the Himalayas and the people who live there</textarea>
+      </div>
+      <div>
+        <h2>Length</h2>
+        <div class="chips" id="lengths" role="group" aria-label="Video length"></div>
+        <p class="est" id="est"></p>
+      </div>
+      <div>
+        <h2>Shape</h2>
+        <div class="chips" id="shapes" role="group" aria-label="Video shape">
+          <button class="chip" data-shape="wide" aria-pressed="true">Wide 16:9</button>
+          <button class="chip" data-shape="vert" aria-pressed="false">Vertical 9:16</button>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <h2>Language</h2>
+          <label for="lang" class="vh">Language</label>
+          <select id="lang"></select>
+        </div>
+        <div>
+          <h2>Voice</h2>
+          <label for="voice" class="vh">Voice</label>
+          <select id="voice"><option value="f">Female</option><option value="m">Male</option></select>
+        </div>
+      </div>
+      <div>
+        <h2>Speaking speed</h2>
+        <label for="speed" class="vh">Speed</label>
+        <select id="speed"><option value="-10%">Slow</option><option value="+0%" selected>Normal</option><option value="+10%">Fast</option></select>
+      </div>
+      <p class="note"><b>Keep this screen open</b> while the video builds. The video is recorded in real time, so a 5 minute video takes about 5 minutes after the voice and photos are ready.</p>
+      <button class="cta" id="go">Make my video</button>
+    </section>
+
+    <!-- PROGRESS -->
+    <section class="screen" id="s-progress" hidden>
+      <h1 id="p-title">Building your video</h1>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="pbarwrap"><i id="pfill"></i></div>
+      <ul class="steps" id="steps"></ul>
+      <canvas id="live" class="live" hidden></canvas>
+      <p class="err" id="err" hidden></p>
+      <div class="row">
+        <button class="ghost" id="cancel">Cancel</button>
+        <button class="ghost" id="retry" hidden>Try again</button>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section class="screen" id="s-result" hidden>
+      <h1 id="r-title">Your video</h1>
+      <video id="player" controls playsinline></video>
+      <p class="est" id="r-meta"></p>
+      <div class="row">
+        <button class="cta" id="save">Save video</button>
+        <button class="ghost" id="share">Share</button>
+      </div>
+      <button class="ghost" id="again">Make another</button>
+      <p class="hint" id="credits"></p>
+    </section>
+  </main>
+</div>
+<script src="/app.js" type="module"></script>
+</body>
+</html>
