@@ -35,7 +35,32 @@ function withTimeout(p, ms) {
   return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('voice service timed out')), ms))]);
 }
 
+const AZURE_KEY = process.env.AZURE_SPEECH_KEY || '';
+const AZURE_REGION = process.env.AZURE_SPEECH_REGION || '';
+const esc = t => t.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]));
+
+// Official Azure Speech REST API (used when AZURE_SPEECH_KEY and AZURE_SPEECH_REGION are set).
+async function synthAzure(text, voice, rate) {
+  const lang = voice.split('-').slice(0, 2).join('-');
+  const ssml = `<speak version='1.0' xml:lang='${lang}'><voice name='${voice}'><prosody rate='${rate}'>${esc(text)}</prosody></voice></speak>`;
+  const r = await withTimeout(fetch(`https://${AZURE_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+    method: 'POST',
+    headers: {
+      'Ocp-Apim-Subscription-Key': AZURE_KEY,
+      'Content-Type': 'application/ssml+xml',
+      'X-Microsoft-OutputFormat': 'audio-24khz-96kbitrate-mono-mp3',
+      'User-Agent': 'katha-studio'
+    },
+    body: ssml
+  }), 45000);
+  if (!r.ok) throw new Error('Azure voice error ' + r.status + (r.status === 401 ? ' (check the key and region)' : r.status === 429 ? ' (free limit reached or too many requests)' : ''));
+  const buf = Buffer.from(await r.arrayBuffer());
+  if (buf.length < 500) throw new Error('empty audio');
+  return buf;
+}
+
 async function synth(text, voice, rate) {
+  if (AZURE_KEY && AZURE_REGION) return synthAzure(text, voice, rate);
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -50,7 +75,7 @@ async function synth(text, voice, rate) {
 }
 
 async function handleTts(req, res) {
-  if (!EdgeTTS) return json(res, 503, { error: 'Voice engine is not installed on the server.' });
+  if (!EdgeTTS && !(AZURE_KEY && AZURE_REGION)) return json(res, 503, { error: 'Voice engine is not installed on the server.' });
   if (busy >= MAX_BUSY) return json(res, 429, { error: 'Voice server is busy, try again in a moment.' });
   let body;
   try { body = JSON.parse(await readBody(req)); } catch { return json(res, 400, { error: 'Bad request.' }); }
@@ -93,7 +118,7 @@ http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://x');
     if (req.method === 'POST' && url.pathname === '/api/tts') return await handleTts(req, res);
-    if (req.method === 'GET' && url.pathname === '/health') return json(res, 200, { ok: true, voice: !!EdgeTTS });
+    if (req.method === 'GET' && url.pathname === '/health') return json(res, 200, { ok: true, voice: !!EdgeTTS || !!(AZURE_KEY && AZURE_REGION), engine: AZURE_KEY && AZURE_REGION ? 'azure' : 'edge' });
     if (req.method === 'GET' || req.method === 'HEAD') return await serveStatic(req, res);
     res.writeHead(405); res.end('Method not allowed');
   } catch (e) { console.error(e); if (!res.headersSent) json(res, 500, { error: 'Server error' }); }
